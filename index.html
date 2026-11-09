@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora Clínica de Edad Gestacional & FPP</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            clinical: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              200: '#99f6e4',
+              300: '#5eead4',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+              950: '#042f2e',
+            },
+            brand: {
+              blue: '#0284c7',
+              dark: '#0f172a'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons for clean medical iconography -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+    /* Custom scrollbars for clean UI */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: #334155;
+    }
+    /* Pulse badge animation */
+    @keyframes subtle-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.85; transform: scale(1.02); }
+    }
+    .badge-pulse {
+      animation: subtle-pulse 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col antialiased selection:bg-clinical-500 selection:text-white">
+
+  <!-- Toast Notification Container -->
+  <div id="toast" class="fixed top-5 right-5 z-50 transform transition-all duration-300 ease-out translate-y-[-100px] opacity-0 pointer-events-none flex items-center gap-3 bg-slate-900/95 dark:bg-slate-800/95 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700/50 backdrop-blur-md">
+    <div class="w-8 h-8 rounded-full bg-clinical-500/20 text-clinical-400 flex items-center justify-center flex-shrink-0">
+      <i class="fa-solid fa-circle-check text-base"></i>
+    </div>
+    <div>
+      <h4 id="toast-title" class="text-sm font-semibold text-slate-100 leading-tight">Nota copiada</h4>
+      <p id="toast-message" class="text-xs text-slate-300">Resumen listo para pegar en el expediente.</p>
+    </div>
+  </div>
+
+  <!-- Header / Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-clinical-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-clinical-500/20">
+          <i class="fa-solid fa-baby text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold tracking-tight text-slate-900 dark:text-white leading-none">GestaCalc <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-clinical-100 text-clinical-800 dark:bg-clinical-900/50 dark:text-clinical-300 border border-clinical-300/40">Clínica</span></h1>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Obstetricia & Medicina Perinatal</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="btn-reset" title="Restablecer a valores por defecto" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+          <i class="fa-solid fa-arrow-rotate-left text-sm"></i>
+          <span class="sr-only">Restablecer</span>
+        </button>
+        <button id="theme-toggle" class="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="Cambiar tema claro/oscuro">
+          <i id="theme-icon" class="fa-solid fa-moon text-sm"></i>
+          <span class="sr-only">Cambiar tema</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- Columna Izquierda: Parámetros Clínicos (4 Cols) -->
+      <div class="lg:col-span-4 space-y-5">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200/80 dark:border-slate-800/80 p-5 sm:p-6 relative overflow-hidden">
+          <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-clinical-500 via-teal-400 to-sky-500"></div>
+          
+          <div class="flex items-center justify-between mb-5">
+            <h2 class="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <i class="fa-solid fa-calendar-days text-clinical-600 dark:text-clinical-400"></i>
+              Parámetros de Entrada
+            </h2>
+            <span class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">FUM / Ciclo</span>
+          </div>
+
+          <form id="calculator-form" onsubmit="event.preventDefault();" class="space-y-4">
+            
+            <!-- FUM / FUR Input -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="fum-date" class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Fecha Última Menstruación (FUM)
+                </label>
+                <button type="button" id="btn-quick-fum-10w" class="text-[11px] text-clinical-600 dark:text-clinical-400 hover:underline font-medium">
+                  -10 sem
+                </button>
+              </div>
+              <div class="relative">
+                <input type="date" id="fum-date" required
+                  class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-clinical-500 focus:border-clinical-500 transition-all outline-none">
+              </div>
+              <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Primer día del último sangrado catamenial normal.</p>
+            </div>
+
+            <!-- Fecha de Valoración -->
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label for="eval-date" class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Fecha de Valoración
+                </label>
+                <button type="button" id="btn-set-today" class="text-[11px] bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-2 py-0.5 rounded text-slate-600 dark:text-slate-300 font-medium transition-colors">
+                  Hoy
+                </button>
+              </div>
+              <input type="date" id="eval-date" required
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-clinical-500 focus:border-clinical-500 transition-all outline-none">
+              <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400">Permite auditoría retrospectiva o planeación futura.</p>
+            </div>
+
+            <!-- Duración del Ciclo -->
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div class="flex items-center justify-between mb-1">
+                <label for="cycle-days" class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Duración del Ciclo Menstrual
+                </label>
+                <span id="cycle-display" class="text-xs font-bold text-clinical-600 dark:text-clinical-400 bg-clinical-50 dark:bg-clinical-950/60 px-2 py-0.5 rounded-full border border-clinical-200 dark:border-clinical-800">
+                  28 días
+                </span>
+              </div>
+              <input type="range" id="cycle-days" min="21" max="35" value="28" step="1"
+                class="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-clinical-600 dark:accent-clinical-400">
+              <div class="flex justify-between text-[10px] text-slate-400 mt-1 font-mono">
+                <span>21 d (Corto)</span>
+                <span>28 d (Típico)</span>
+                <span>35 d (Largo)</span>
+              </div>
+              <p class="mt-1 text-[11px] text-slate-500 dark:text-slate-400 italic">
+                Ajuste Naegele: <span id="cycle-adjustment-label" class="font-medium text-slate-700 dark:text-slate-300">Sin corrección (0 d)</span>
+              </p>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="pt-2">
+              <button type="button" id="btn-copy-note" 
+                class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-900 dark:bg-clinical-600 hover:bg-slate-800 dark:hover:bg-clinical-500 text-white font-medium text-xs sm:text-sm shadow-md transition-all active:scale-[0.98]">
+                <i class="fa-regular fa-clipboard"></i>
+                <span>Copiar Nota de Expediente</span>
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Tarjeta de Referencia Clínica Rápida -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-950 text-slate-200 rounded-2xl p-5 border border-slate-800 shadow-sm text-xs space-y-3">
+          <div class="flex items-center gap-2 text-teal-400 font-bold uppercase tracking-wider text-[11px]">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>Criterios Obstétricos Utilizados</span>
+          </div>
+          <p class="text-slate-400 leading-relaxed">
+            • <strong class="text-slate-200">FPP:</strong> Regla de Naegele modificada (+7 días + [Ciclo - 28 días] - 3 meses + 1 año).<br>
+            • <strong class="text-slate-200">Embarazo a término:</strong> 37.0 a 41.6 semanas (ACOG / FIGO).<br>
+            • <strong class="text-slate-200">Concepción estimada:</strong> FUM + (Ciclo - 14 días).
+          </p>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Resultados y Protocolos Clínicos (8 Cols) -->
+      <div class="lg:col-span-8 space-y-6">
+
+        <!-- Banner de Alerta / Estado de Viabilidad (si aplica error o fecha futura) -->
+        <div id="validation-banner" class="hidden p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200 text-sm flex items-start gap-3">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500 mt-0.5 flex-shrink-0"></i>
+          <span id="validation-text">Verifique las fechas introducidas.</span>
+        </div>
+
+        <!-- Tarjetas Principales de Resultados -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          
+          <!-- Tarjeta 1: Edad Gestacional Actual -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm relative overflow-hidden group">
+            <div class="flex justify-between items-start mb-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Edad Gestacional (EG)
+              </span>
+              <span id="term-status-badge" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                Calculando...
+              </span>
+            </div>
+
+            <div class="my-2">
+              <div class="flex items-baseline gap-2">
+                <span id="eg-weeks-display" class="text-4xl sm:text-5xl font-extrabold tracking-tight text-clinical-600 dark:text-clinical-400">
+                  0
+                </span>
+                <span class="text-xl font-bold text-slate-700 dark:text-slate-200">sem</span>
+                <span id="eg-days-display" class="text-3xl sm:text-4xl font-extrabold text-slate-700 dark:text-slate-200">
+                  0
+                </span>
+                <span class="text-xl font-bold text-slate-700 dark:text-slate-200">días</span>
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium flex items-center gap-1.5">
+                <i class="fa-regular fa-clock"></i>
+                <span id="eg-total-days">0 días de amenorrea cronológica</span>
+              </div>
+            </div>
+
+            <!-- Mini progress bar -->
+            <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center justify-between text-xs">
+              <span class="text-slate-500 dark:text-slate-400">Progreso Gestacional:</span>
+              <span id="gestation-progress-text" class="font-semibold text-slate-800 dark:text-slate-200">0%</span>
+            </div>
+            <div class="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full mt-1.5 overflow-hidden">
+              <div id="gestation-progress-bar" class="h-full bg-gradient-to-r from-clinical-500 to-sky-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Tarjeta 2: Fecha Probable de Parto -->
+          <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm relative overflow-hidden flex flex-col justify-between">
+            <div>
+              <div class="flex justify-between items-start mb-2">
+                <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Fecha Probable de Parto (FPP)
+                </span>
+                <span class="text-[11px] font-medium text-slate-400 font-mono">40.0 sem</span>
+              </div>
+
+              <div class="my-2">
+                <h3 id="fpp-formatted-date" class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
+                  --/--/----
+                </h3>
+                <p id="fpp-weekday" class="text-xs text-clinical-600 dark:text-clinical-400 font-semibold uppercase tracking-wider mt-0.5">
+                  Esperando fecha
+                </p>
+              </div>
+            </div>
+
+            <div class="pt-3 border-t border-slate-100 dark:border-slate-800/60 mt-3 text-xs space-y-1">
+              <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                <span>Tiempo restante:</span>
+                <span id="time-remaining" class="font-semibold text-slate-700 dark:text-slate-200">--</span>
+              </div>
+              <div class="flex justify-between text-slate-500 dark:text-slate-400">
+                <span>Concepción aprox.:</span>
+                <span id="conception-date-display" class="font-medium text-slate-600 dark:text-slate-300">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Indicador de Trimestre Interactivo -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-chart-pie text-clinical-500"></i>
+              Cronología Trimestral
+            </h3>
+            <span id="trimester-badge" class="px-2.5 py-1 text-xs font-bold rounded-lg bg-teal-100 dark:bg-teal-950/70 text-teal-800 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
+              1º Trimestre
+            </span>
+          </div>
+
+          <!-- Trimester Visual Tabs -->
+          <div class="grid grid-cols-3 gap-2">
+            <!-- T1 -->
+            <div id="card-t1" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center transition-all bg-slate-50 dark:bg-slate-800/40">
+              <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">1º Trimestre</div>
+              <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-0.5">0 a 13.6 sem</div>
+              <div id="badge-t1" class="text-[10px] mt-1 text-slate-400 hidden">Activo</div>
+            </div>
+            <!-- T2 -->
+            <div id="card-t2" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center transition-all bg-slate-50 dark:bg-slate-800/40">
+              <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">2º Trimestre</div>
+              <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-0.5">14.0 a 27.6 sem</div>
+              <div id="badge-t2" class="text-[10px] mt-1 text-slate-400 hidden">Activo</div>
+            </div>
+            <!-- T3 -->
+            <div id="card-t3" class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center transition-all bg-slate-50 dark:bg-slate-800/40">
+              <div class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase">3º Trimestre</div>
+              <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 mt-0.5">28.0 a 41+ sem</div>
+              <div id="badge-t3" class="text-[10px] mt-1 text-slate-400 hidden">Activo</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hitos y Estudios Sugeridos según la Semana Actual -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <i class="fa-solid fa-stethoscope text-clinical-600 dark:text-clinical-400"></i>
+                Guía de Controles y Estudios Clínicos
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400">Pruebas diagnósticas y tamizajes correspondientes a la edad gestacional.</p>
+            </div>
+            <span class="text-xs px-2.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono">ACOG / SEGO</span>
+          </div>
+
+          <!-- Milestones Timeline List -->
+          <div id="milestones-container" class="space-y-3">
+            <!-- Will be dynamically populated and marked active by JS -->
+          </div>
+        </div>
+
+        <!-- Signos de Alarma Obstétrica para Consejería -->
+        <div class="bg-rose-50/60 dark:bg-rose-950/20 rounded-2xl p-5 border border-rose-200/80 dark:border-rose-900/40 shadow-sm">
+          <div class="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-bold text-sm mb-3">
+            <i class="fa-solid fa-bell"></i>
+            <span>Signos de Alarma Obstétrica (Consejería para la Paciente)</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-xs text-slate-700 dark:text-slate-300">
+            <div class="flex items-center gap-2 bg-white/70 dark:bg-slate-900/70 p-2 rounded-xl border border-rose-100 dark:border-rose-950/40">
+              <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+              <span>Cefalea intensa / Fosfenos / Acúfenos</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white/70 dark:bg-slate-900/70 p-2 rounded-xl border border-rose-100 dark:border-rose-950/40">
+              <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+              <span>Epigastralgia ("dolor en boca del estómago")</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white/70 dark:bg-slate-900/70 p-2 rounded-xl border border-rose-100 dark:border-rose-950/40">
+              <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+              <span>Sangrado transvaginal / Hemorragia</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white/70 dark:bg-slate-900/70 p-2 rounded-xl border border-rose-100 dark:border-rose-950/40">
+              <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+              <span>Salida de líquido amniótico por genitales</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white/70 dark:bg-slate-900/70 p-2 rounded-xl border border-rose-100 dark:border-rose-950/40">
+              <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+              <span>Disminución o ausencia de mov. fetales</span>
+            </div>
+            <div class="flex items-center gap-2 bg-white/70 dark:bg-slate-900/70 p-2 rounded-xl border border-rose-100 dark:border-rose-950/40">
+              <span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span>
+              <span>Fiebre o disuria marcada</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500 dark:text-slate-400">
+      Herramienta clínica de apoyo para profesionales de la salud. Todos los cálculos deben correlacionarse con ecografía temprana de primer trimestre según indicación clínica.
+    </div>
+  </footer>
+
+  <!-- Script Logic -->
+  <script>
+    // Elements
+    const fumInput = document.getElementById('fum-date');
+    const evalInput = document.getElementById('eval-date');
+    const cycleInput = document.getElementById('cycle-days');
+    const cycleDisplay = document.getElementById('cycle-display');
+    const cycleAdjText = document.getElementById('cycle-adjustment-label');
+    const btnSetToday = document.getElementById('btn-set-today');
+    const btnQuickFum10w = document.getElementById('btn-quick-fum-10w');
+    const btnCopyNote = document.getElementById('btn-copy-note');
+    const btnReset = document.getElementById('btn-reset');
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    const themeIcon = document.getElementById('theme-icon');
+
+    // Result elements
+    const egWeeksEl = document.getElementById('eg-weeks-display');
+    const egDaysEl = document.getElementById('eg-days-display');
+    const egTotalDaysEl = document.getElementById('eg-total-days');
+    const termBadge = document.getElementById('term-status-badge');
+    const progressBar = document.getElementById('gestation-progress-bar');
+    const progressText = document.getElementById('gestation-progress-text');
+    const fppFormattedEl = document.getElementById('fpp-formatted-date');
+    const fppWeekdayEl = document.getElementById('fpp-weekday');
+    const timeRemainingEl = document.getElementById('time-remaining');
+    const conceptionEl = document.getElementById('conception-date-display');
+    const trimesterBadge = document.getElementById('trimester-badge');
+    const validationBanner = document.getElementById('validation-banner');
+    const validationText = document.getElementById('validation-text');
+    const milestonesContainer = document.getElementById('milestones-container');
+
+    // Milestones definition
+    const CLINICAL_MILESTONES = [
+      {
+        id: 'm1',
+        minWeeks: 5.0,
+        maxWeeks: 10.6,
+        title: 'Primera Consulta Prenatal & USG Precoz',
+        desc: 'Confirmación de saco gestacional intrauterino, vitalidad embrionaria y longitud cráneo-caudal (LCC). Grupo y Rh, biometría hemática, VDRL, VIH, EGO.',
+        icon: 'fa-solid fa-heart-pulse',
+        badge: '5.0 - 10.6 sem'
+      },
+      {
+        id: 'm2',
+        minWeeks: 11.0,
+        maxWeeks: 13.6,
+        title: 'Ecografía de 1er Trimestre / Translucencia Nucal',
+        desc: 'Tamizaje de aneuploidías (Trisomía 21, 18, 13), hueso nasal, ductus venoso y riesgo de preeclampsia temprana con Doppler de arterias uterinas.',
+        icon: 'fa-solid fa-dna',
+        badge: '11.0 - 13.6 sem'
+      },
+      {
+        id: 'm3',
+        minWeeks: 18.0,
+        maxWeeks: 24.0,
+        title: 'Ecografía Estructural / Morfológica Fetal',
+        desc: 'Evaluación detallada de anatomía fetal de órganos y sistemas, neurosonografía básica, screening de anomalías cardíacas y longitud cervical.',
+        icon: 'fa-solid fa-image',
+        badge: '18.0 - 24.0 sem'
+      },
+      {
+        id: 'm4',
+        minWeeks: 24.0,
+        maxWeeks: 28.0,
+        title: 'Tamiz de Diabetes Gestacional & Profilaxis Rh',
+        desc: 'Curva de tolerancia a la glucosa oral (CTOG 75g o O\'Sullivan 50g). Aplicación de inmunoglobulina anti-D en pacientes Rh negativo no sensibilizadas (28 sem).',
+        icon: 'fa-solid fa-vial',
+        badge: '24.0 - 28.0 sem'
+      },
+      {
+        id: 'm5',
+        minWeeks: 35.0,
+        maxWeeks: 37.0,
+        title: 'Cultivo para Estreptococo Grupo B (SGB)',
+        desc: 'Toma de cultivo vaginorrectal para detección de Streptococcus agalactiae y prevención de sepsis neonatal precoz mediante profilaxis intraparto.',
+        icon: 'fa-solid fa-bacterium',
+        badge: '35.0 - 37.0 sem'
+      },
+      {
+        id: 'm6',
+        minWeeks: 37.0,
+        maxWeeks: 42.0,
+        title: 'Gestación a Término & Monitoreo Perinatal',
+        desc: 'Embarazo a término. Valoración pelvimétrica, presentación fetal, registro cardiotocográfico (NST), perfil biofísico y consejería de trabajo de parto.',
+        icon: 'fa-solid fa-hospital-user',
+        badge: '37.0 - 41.6 sem'
+      }
+    ];
+
+    // Helper: format YYYY-MM-DD
+    function toISODate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    // Helper: parse input date safely
+    function parseDate(dateStr) {
+      if (!dateStr) return null;
+      const parts = dateStr.split('-');
+      if (parts.length !== 3) return null;
+      return new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+    }
+
+    // Format readable Spanish date
+    function formatSpanishDate(d) {
+      if (!d || isNaN(d.getTime())) return '--/--/----';
+      return d.toLocaleDateString('es-ES', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+    }
+
+    // Get weekday in Spanish
+    function getSpanishWeekday(d) {
+      if (!d || isNaN(d.getTime())) return '';
+      const day = d.toLocaleDateString('es-ES', { weekday: 'long' });
+      return day.charAt(0).toUpperCase() + day.slice(1);
+    }
+
+    // Initialize Dates
+    function initDefaultDates() {
+      const today = new Date();
+      evalInput.value = toISODate(today);
+
+      // Default FUM to 12 weeks ago for immediate clinical view
+      const defaultFum = new Date(today);
+      defaultFum.setDate(today.getDate() - 84); // 12 weeks
+      fumInput.value = toISODate(defaultFum);
+      cycleInput.value = 28;
+    }
+
+    // Core Calculation Logic
+    function recalculate() {
+      const fum = parseDate(fumInput.value);
+      const evalDate = parseDate(evalInput.value);
+      const cycleLength = parseInt(cycleInput.value, 10) || 28;
+      const cycleDiff = cycleLength - 28; // Correction factor
+
+      // Update cycle text display
+      cycleDisplay.textContent = `${cycleLength} días`;
+      if (cycleDiff === 0) {
+        cycleAdjText.textContent = 'Sin corrección (0 d)';
+      } else if (cycleDiff > 0) {
+        cycleAdjText.textContent = `+${cycleDiff} d (FPP retrasada)`;
+      } else {
+        cycleAdjText.textContent = `${cycleDiff} d (FPP adelantada)`;
+      }
+
+      if (!fum || !evalDate) {
+        showValidation('Por favor seleccione una Fecha de Última Menstruación válida.');
+        return;
+      }
+
+      // Elapsed days from FUM to Evaluation
+      const diffTime = evalDate.getTime() - fum.getTime();
+      const totalElapsedDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+      if (totalElapsedDays < 0) {
+        showValidation('La fecha de evaluación no puede ser anterior a la FUM.');
+        clearResults();
+        return;
+      }
+
+      hideValidation();
+
+      // Calculation of Gestational Age
+      const weeks = Math.floor(totalElapsedDays / 7);
+      const days = totalElapsedDays % 7;
+      const decimalWeeks = weeks + (days / 7);
+
+      egWeeksEl.textContent = weeks;
+      egDaysEl.textContent = days;
+      egTotalDaysEl.textContent = `${totalElapsedDays} días totales transcurridos`;
+
+      // Progress bar (40 weeks as standard baseline)
+      const rawProgress = Math.min(Math.max((totalElapsedDays / 280) * 100, 0), 100);
+      progressBar.style.width = `${rawProgress.toFixed(1)}%`;
+      progressText.textContent = `${rawProgress.toFixed(1)}%`;
+
+      // Classification Status Badge
+      updateTermClassification(decimalWeeks);
+
+      // FPP Calculation (Naegele Rule corrected by cycle length)
+      // Standard Naegele: FUM + 280 days + (cycle - 28)
+      const totalDaysToDueDate = 280 + cycleDiff;
+      const fppDate = new Date(fum);
+      fppDate.setDate(fum.getDate() + totalDaysToDueDate);
+
+      fppFormattedEl.textContent = formatSpanishDate(fppDate);
+      fppWeekdayEl.textContent = getSpanishWeekday(fppDate);
+
+      // Time Remaining until FPP
+      const daysRemaining = Math.floor((fppDate.getTime() - evalDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysRemaining > 0) {
+        const remWeeks = Math.floor(daysRemaining / 7);
+        const remDays = daysRemaining % 7;
+        timeRemainingEl.textContent = `${remWeeks} sem y ${remDays} d (${daysRemaining} días)`;
+      } else if (daysRemaining === 0) {
+        timeRemainingEl.textContent = '¡Fecha Probable de Parto HOY!';
+      } else {
+        const postDays = Math.abs(daysRemaining);
+        timeRemainingEl.textContent = `+${Math.floor(postDays / 7)} sem ${postDays % 7} d post-FPP`;
+      }
+
+      // Estimated Conception Date: FUM + (cycleLength - 14)
+      const conceptionDate = new Date(fum);
+      conceptionDate.setDate(fum.getDate() + (cycleLength - 14));
+      conceptionEl.textContent = formatSpanishDate(conceptionDate);
+
+      // Trimester Update
+      updateTrimesterDisplay(decimalWeeks);
+
+      // Milestones render
+      renderMilestones(decimalWeeks);
+    }
+
+    // Status Term classification badge
+    function updateTermClassification(weeks) {
+      termBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full ';
+      if (weeks < 14) {
+        termBadge.textContent = '1º Trimestre';
+        termBadge.className += 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800';
+      } else if (weeks < 28) {
+        termBadge.textContent = '2º Trimestre';
+        termBadge.className += 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950/60 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800';
+      } else if (weeks < 37.0) {
+        termBadge.textContent = 'Pretérmino';
+        termBadge.className += 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
+      } else if (weeks <= 41.6) {
+        termBadge.textContent = 'A Término';
+        termBadge.className += 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700';
+      } else {
+        termBadge.textContent = 'Post-término';
+        termBadge.className += 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700';
+      }
+    }
+
+    // Update Trimester Highlighting
+    function updateTrimesterDisplay(weeks) {
+      const card1 = document.getElementById('card-t1');
+      const card2 = document.getElementById('card-t2');
+      const card3 = document.getElementById('card-t3');
+      const b1 = document.getElementById('badge-t1');
+      const b2 = document.getElementById('badge-t2');
+      const b3 = document.getElementById('badge-t3');
+
+      // reset styles
+      [card1, card2, card3].forEach(c => {
+        c.className = 'p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-center transition-all bg-slate-50 dark:bg-slate-800/40 opacity-60';
+      });
+      [b1, b2, b3].forEach(b => b.classList.add('hidden'));
+
+      if (weeks < 14.0) {
+        card1.className = 'p-3 rounded-xl border-2 border-clinical-500 bg-clinical-50/70 dark:bg-clinical-950/50 text-center transition-all shadow-sm';
+        b1.classList.remove('hidden');
+        b1.className = 'text-[10px] mt-1 font-bold text-clinical-600 dark:text-clinical-400';
+        trimesterBadge.textContent = '1º Trimestre (0 - 13.6 sem)';
+      } else if (weeks < 28.0) {
+        card2.className = 'p-3 rounded-xl border-2 border-clinical-500 bg-clinical-50/70 dark:bg-clinical-950/50 text-center transition-all shadow-sm';
+        b2.classList.remove('hidden');
+        b2.className = 'text-[10px] mt-1 font-bold text-clinical-600 dark:text-clinical-400';
+        trimesterBadge.textContent = '2º Trimestre (14.0 - 27.6 sem)';
+      } else {
+        card3.className = 'p-3 rounded-xl border-2 border-clinical-500 bg-clinical-50/70 dark:bg-clinical-950/50 text-center transition-all shadow-sm';
+        b3.classList.remove('hidden');
+        b3.className = 'text-[10px] mt-1 font-bold text-clinical-600 dark:text-clinical-400';
+        trimesterBadge.textContent = '3º Trimestre (28.0 - 41+ sem)';
+      }
+    }
+
+    // Render clinical milestones with active status
+    function renderMilestones(currentWeeks) {
+      milestonesContainer.innerHTML = '';
+
+      CLINICAL_MILESTONES.forEach(m => {
+        const isActive = currentWeeks >= m.minWeeks && currentWeeks <= m.maxWeeks;
+        const isPast = currentWeeks > m.maxWeeks;
+
+        const div = document.createElement('div');
+        div.className = `p-3.5 rounded-xl border transition-all flex items-start gap-3.5 ${
+          isActive 
+            ? 'bg-clinical-50/90 dark:bg-clinical-950/40 border-clinical-400 dark:border-clinical-600 ring-2 ring-clinical-400/20 shadow-sm' 
+            : isPast 
+              ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200/60 dark:border-slate-800/60 opacity-60' 
+              : 'bg-white dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'
+        }`;
+
+        div.innerHTML = `
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
+            isActive 
+              ? 'bg-clinical-600 text-white shadow-sm' 
+              : isPast
+                ? 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+          }">
+            <i class="${m.icon} text-xs"></i>
+          </div>
+          <div class="flex-grow">
+            <div class="flex items-center justify-between gap-2 flex-wrap">
+              <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 ${isActive ? 'text-clinical-700 dark:text-clinical-300' : ''}">
+                ${m.title}
+              </h4>
+              <div class="flex items-center gap-1.5">
+                ${isActive ? '<span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-clinical-600 text-white tracking-wide uppercase">En curso</span>' : ''}
+                ${isPast ? '<span class="text-[10px] text-slate-400 font-medium"><i class="fa-solid fa-check text-emerald-500 mr-1"></i>Previo</span>' : ''}
+                <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                  ${m.badge}
+                </span>
+              </div>
+            </div>
+            <p class="text-[11px] text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+              ${m.desc}
+            </p>
+          </div>
+        `;
+        milestonesContainer.appendChild(div);
+      });
+    }
+
+    function showValidation(msg) {
+      validationText.textContent = msg;
+      validationBanner.classList.remove('hidden');
+    }
+
+    function hideValidation() {
+      validationBanner.classList.add('hidden');
+    }
+
+    function clearResults() {
+      egWeeksEl.textContent = '0';
+      egDaysEl.textContent = '0';
+      egTotalDaysEl.textContent = '0 días';
+      fppFormattedEl.textContent = '--/--/----';
+      fppWeekdayEl.textContent = 'Esperando fechas';
+      timeRemainingEl.textContent = '--';
+      conceptionEl.textContent = '--';
+      progressBar.style.width = '0%';
+      progressText.textContent = '0%';
+    }
+
+    // Copy clinical note to clipboard
+    function copyClinicalNote() {
+      const fum = parseDate(fumInput.value);
+      const evalDate = parseDate(evalInput.value);
+      const cycleLength = cycleInput.value;
+
+      if (!fum || !evalDate) {
+        showToast('Error', 'Seleccione fechas válidas para copiar.');
+        return;
+      }
+
+      const egText = `${egWeeksEl.textContent}.${egDaysEl.textContent} semanas (${egWeeksEl.textContent} sem ${egDaysEl.textContent} d)`;
+      const fppText = `${fppFormattedEl.textContent} (${fppWeekdayEl.textContent})`;
+      const trimText = trimesterBadge.textContent;
+      const concText = conceptionEl.textContent;
+
+      const clinicalSummary = 
+`--- NOTA OBSTÉTRICA DE EDAD GESTACIONAL ---
+• FUM: ${formatSpanishDate(fum)} (Ciclo: ${cycleLength} días)
+• Fecha de Evaluación: ${formatSpanishDate(evalDate)}
+• Edad Gestacional (EG): ${egText}
+• FPP (Naegele corregida): ${fppText}
+• Fecha Concepción Estimada: ${concText}
+• Trimestre: ${trimText}
+• Estado: ${termBadge.textContent}
+• Signos de alarma explicados a paciente: Cefalea, acúfenos, fosfenos, sangrado transvaginal, hidrorrea o cambios en dinámica fetal.
+--------------------------------------------`;
+
+      // Copy using legacy textarea to comply with iframe restrictions
+      const textArea = document.createElement('textarea');
+      textArea.value = clinicalSummary;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          showToast('Nota Médica Copiada', 'Resumen obstétrico guardado en portapapeles.');
+        } else {
+          showToast('Aviso', 'No se pudo copiar automáticamente.');
+        }
+      } catch (err) {
+        showToast('Error', 'Error al acceder al portapapeles.');
+      }
+      document.body.removeChild(textArea);
+    }
+
+    // Toast alert helper
+    let toastTimeout;
+    function showToast(title, msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-title').textContent = title;
+      document.getElementById('toast-message').textContent = msg;
+
+      clearTimeout(toastTimeout);
+      toast.classList.remove('translate-y-[-100px]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      toastTimeout = setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-[-100px]', 'opacity-0');
+      }, 3500);
+    }
+
+    // Theme Management
+    function setupTheme() {
+      // Check localStorage or system preference
+      const isDark = localStorage.getItem('theme') === 'dark' || 
+        (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      
+      applyTheme(isDark);
+
+      themeToggleBtn.addEventListener('click', () => {
+        const currentlyDark = document.documentElement.classList.contains('dark');
+        applyTheme(!currentlyDark);
+      });
+    }
+
+    function applyTheme(isDark) {
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        themeIcon.className = 'fa-solid fa-sun text-sm text-amber-400';
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        themeIcon.className = 'fa-solid fa-moon text-sm text-slate-600';
+        localStorage.setItem('theme', 'light');
+      }
+    }
+
+    // Event Listeners
+    fumInput.addEventListener('input', recalculate);
+    evalInput.addEventListener('input', recalculate);
+    cycleInput.addEventListener('input', recalculate);
+
+    btnSetToday.addEventListener('click', () => {
+      evalInput.value = toISODate(new Date());
+      recalculate();
+    });
+
+    btnQuickFum10w.addEventListener('click', () => {
+      const evalDate = parseDate(evalInput.value) || new Date();
+      const past = new Date(evalDate);
+      past.setDate(evalDate.getDate() - 70); // 10 weeks
+      fumInput.value = toISODate(past);
+      recalculate();
+    });
+
+    btnReset.addEventListener('click', () => {
+      initDefaultDates();
+      recalculate();
+      showToast('Calculadora reiniciada', 'Valores estándar restablecidos.');
+    });
+
+    btnCopyNote.addEventListener('click', copyClinicalNote);
+
+    // Initial boot
+    window.addEventListener('DOMContentLoaded', () => {
+      setupTheme();
+      initDefaultDates();
+      recalculate();
+    });
+  </script>
+</body>
+</html>
