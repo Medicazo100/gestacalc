@@ -186,6 +186,32 @@
               </p>
             </div>
 
+            <!-- Edad Gestacional por Ultrasonido (opcional) -->
+            <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+              <div class="flex items-center justify-between mb-1">
+                <label for="usg-date" class="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300">
+                  Edad Gestacional por Ultrasonido
+                </label>
+                <span class="text-[11px] font-semibold tracking-wider text-slate-400 uppercase">Opcional</span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-2">Fecha en que se realizó el ultrasonido y la edad gestacional que reportó ese día. La app la extrapola a la fecha de valoración.</p>
+              <label for="usg-date" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Fecha del ultrasonido</label>
+              <input type="date" id="usg-date"
+                class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-clinical-500 focus:border-clinical-500 transition-all outline-none">
+              <div class="grid grid-cols-2 gap-2 mt-2">
+                <div>
+                  <label for="usg-weeks" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Semanas (ese día)</label>
+                  <input type="number" id="usg-weeks" min="0" max="42" step="1" placeholder="ej. 12"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-clinical-500 focus:border-clinical-500 transition-all outline-none">
+                </div>
+                <div>
+                  <label for="usg-days" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Días (ese día)</label>
+                  <input type="number" id="usg-days" min="0" max="6" step="1" placeholder="ej. 3"
+                    class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-clinical-500 focus:border-clinical-500 transition-all outline-none">
+                </div>
+              </div>
+            </div>
+
             <!-- Acciones Rápidas -->
             <div class="pt-2">
               <button type="button" id="btn-copy-note" 
@@ -206,7 +232,8 @@
           <p class="text-slate-400 leading-relaxed">
             • <strong class="text-slate-200">FPP:</strong> Regla de Naegele modificada (+7 días + [Ciclo - 28 días] - 3 meses + 1 año).<br>
             • <strong class="text-slate-200">Embarazo a término:</strong> 37.0 a 41.6 semanas (ACOG / FIGO).<br>
-            • <strong class="text-slate-200">Concepción estimada:</strong> FUM + (Ciclo - 14 días).
+            • <strong class="text-slate-200">Concepción estimada:</strong> FUM + (Ciclo - 14 días).<br>
+            • <strong class="text-slate-200">Fechado por USG:</strong> EG actual = EG del USG + días desde el estudio. Si difiere de la FUM &gt; 5 d (1er trim.), &gt; 7 d (2º trim.) o &gt; 21 d (3er trim.), se prefiere el USG (ACOG).
           </p>
         </div>
       </div>
@@ -292,6 +319,40 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Tarjeta: Edad Gestacional por Ultrasonido -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800/80 shadow-sm">
+          <div class="flex justify-between items-start mb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Edad Gestacional por Ultrasonido
+            </span>
+            <span id="usg-diff-badge" class="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+              Sin datos
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">EG por USG (a la fecha de valoración)</div>
+              <div class="flex items-baseline gap-2 mt-1">
+                <span id="usg-eg-weeks" class="text-3xl sm:text-4xl font-extrabold tracking-tight text-clinical-600 dark:text-clinical-400">--</span>
+                <span class="text-lg font-bold text-slate-700 dark:text-slate-200">sem</span>
+                <span id="usg-eg-days" class="text-2xl sm:text-3xl font-extrabold text-slate-700 dark:text-slate-200">--</span>
+                <span class="text-lg font-bold text-slate-700 dark:text-slate-200">días</span>
+              </div>
+              <div id="usg-eg-total" class="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">Ingrese los datos del ultrasonido.</div>
+            </div>
+            <div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 font-medium">FPP por USG</div>
+              <h3 id="usg-fpp-date" class="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight mt-1">--/--/----</h3>
+              <p id="usg-fpp-weekday" class="text-xs text-clinical-600 dark:text-clinical-400 font-semibold uppercase tracking-wider mt-0.5">--</p>
+            </div>
+          </div>
+
+          <p id="usg-recommendation" class="text-xs text-slate-500 dark:text-slate-400 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/60 leading-relaxed">
+            La edad gestacional por ultrasonido se calcula sumando los días transcurridos desde el estudio a la edad que reportó ese día.
+          </p>
         </div>
 
         <!-- Indicador de Trimestre Interactivo -->
@@ -424,6 +485,18 @@
     const validationText = document.getElementById('validation-text');
     const milestonesContainer = document.getElementById('milestones-container');
 
+    // Ultrasound (USG) elements
+    const usgDateInput = document.getElementById('usg-date');
+    const usgWeeksInput = document.getElementById('usg-weeks');
+    const usgDaysInput = document.getElementById('usg-days');
+    const usgDiffBadge = document.getElementById('usg-diff-badge');
+    const usgEgWeeksEl = document.getElementById('usg-eg-weeks');
+    const usgEgDaysEl = document.getElementById('usg-eg-days');
+    const usgEgTotalEl = document.getElementById('usg-eg-total');
+    const usgFppDateEl = document.getElementById('usg-fpp-date');
+    const usgFppWeekdayEl = document.getElementById('usg-fpp-weekday');
+    const usgRecommendationEl = document.getElementById('usg-recommendation');
+
     // Milestones definition
     const CLINICAL_MILESTONES = [
       {
@@ -525,6 +598,11 @@
       defaultFum.setDate(today.getDate() - 84); // 12 weeks
       fumInput.value = toISODate(defaultFum);
       cycleInput.value = 28;
+
+      // Ultrasound fields start empty (optional)
+      usgDateInput.value = '';
+      usgWeeksInput.value = '';
+      usgDaysInput.value = '';
     }
 
     // Core Calculation Logic
@@ -546,6 +624,7 @@
 
       if (!fum || !evalDate) {
         showValidation('Por favor seleccione una Fecha de Última Menstruación válida.');
+        resetUSGCard();
         return;
       }
 
@@ -610,6 +689,95 @@
 
       // Milestones render
       renderMilestones(decimalWeeks);
+
+      // Ultrasound-based dating (extrapolated to the evaluation date)
+      updateUSGDisplay(totalElapsedDays, evalDate);
+    }
+
+    // Reset the ultrasound card to its placeholder state
+    function resetUSGCard() {
+      usgDiffBadge.textContent = 'Sin datos';
+      usgDiffBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+      usgEgWeeksEl.textContent = '--';
+      usgEgDaysEl.textContent = '--';
+      usgEgTotalEl.textContent = 'Ingrese los datos del ultrasonido.';
+      usgFppDateEl.textContent = '--/--/----';
+      usgFppWeekdayEl.textContent = '--';
+      usgRecommendationEl.textContent = 'La edad gestacional por ultrasonido se calcula sumando los días transcurridos desde el estudio a la edad que reportó ese día.';
+    }
+
+    // Ultrasound-based gestational age, extrapolated to the evaluation date
+    function updateUSGDisplay(fumTotalDays, evalDate) {
+      const usgDate = parseDate(usgDateInput.value);
+      const usgWeeks = parseInt(usgWeeksInput.value, 10);
+      const usgDays = parseInt(usgDaysInput.value, 10);
+
+      if (!usgDate || isNaN(usgWeeks) || isNaN(usgDays)) {
+        resetUSGCard();
+        return;
+      }
+      if (usgWeeks < 0 || usgWeeks > 42 || usgDays < 0 || usgDays > 6) {
+        usgDiffBadge.textContent = 'Datos inválidos';
+        usgDiffBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700';
+        usgEgWeeksEl.textContent = '--';
+        usgEgDaysEl.textContent = '--';
+        usgEgTotalEl.textContent = 'Revise la edad gestacional del ultrasonido.';
+        usgFppDateEl.textContent = '--/--/----';
+        usgFppWeekdayEl.textContent = '--';
+        usgRecommendationEl.textContent = 'Semanas de 0 a 42 y días de 0 a 6.';
+        return;
+      }
+
+      const daysSinceUSG = Math.floor((evalDate.getTime() - usgDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSinceUSG < 0) {
+        usgDiffBadge.textContent = 'Fecha inválida';
+        usgDiffBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700';
+        usgEgWeeksEl.textContent = '--';
+        usgEgDaysEl.textContent = '--';
+        usgEgTotalEl.textContent = 'El ultrasonido no puede ser posterior a la valoración.';
+        usgFppDateEl.textContent = '--/--/----';
+        usgFppWeekdayEl.textContent = '--';
+        usgRecommendationEl.textContent = 'La fecha del ultrasonido no puede ser posterior a la fecha de valoración.';
+        return;
+      }
+
+      const usgTotalAtStudy = usgWeeks * 7 + usgDays;
+      const usgCurrentTotal = usgTotalAtStudy + daysSinceUSG;
+      const usgCurWeeks = Math.floor(usgCurrentTotal / 7);
+      const usgCurDays = usgCurrentTotal % 7;
+
+      usgEgWeeksEl.textContent = usgCurWeeks;
+      usgEgDaysEl.textContent = usgCurDays;
+      usgEgTotalEl.textContent = `${usgCurrentTotal} días totales por USG (${daysSinceUSG} días desde el estudio)`;
+
+      // FPP by USG: study date + (280 - EG at study)
+      const fppUSG = new Date(usgDate);
+      fppUSG.setDate(usgDate.getDate() + (280 - usgTotalAtStudy));
+      usgFppDateEl.textContent = formatSpanishDate(fppUSG);
+      usgFppWeekdayEl.textContent = getSpanishWeekday(fppUSG);
+
+      // Difference vs FUM-based EG (USG minus FUM, in days)
+      const diffDays = usgCurrentTotal - fumTotalDays;
+      const diffAbs = Math.abs(diffDays);
+      const usgTrimWeeks = usgTotalAtStudy / 7;
+      const threshold = usgTrimWeeks < 14 ? 5 : usgTrimWeeks < 28 ? 7 : 21;
+      const trimLabel = usgTrimWeeks < 14 ? '1er trimestre' : usgTrimWeeks < 28 ? '2º trimestre' : '3er trimestre';
+
+      if (diffDays === 0) {
+        usgDiffBadge.textContent = 'Concordante';
+        usgDiffBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700';
+        usgRecommendationEl.textContent = 'La edad por ultrasonido coincide con la de la FUM (diferencia de 0 días).';
+      } else {
+        const sign = diffDays > 0 ? '+' : '−';
+        usgDiffBadge.textContent = `${sign}${diffAbs} d vs FUM`;
+        if (diffAbs > threshold) {
+          usgDiffBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
+          usgRecommendationEl.textContent = `El ultrasonido ${diffDays > 0 ? 'adelanta' : 'retrasa'} la gestación ${diffAbs} días respecto a la FUM. En ${trimLabel}, si la diferencia es mayor a ${threshold} días se prefiere el fechado por ultrasonido (ACOG).`;
+        } else {
+          usgDiffBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-200 dark:border-sky-800';
+          usgRecommendationEl.textContent = `Diferencia de ${diffAbs} días respecto a la FUM (dentro del margen de ${threshold} días para ${trimLabel}); se mantiene el fechado por FUM.`;
+        }
+      }
     }
 
     // Status Term classification badge
@@ -734,6 +902,7 @@
       conceptionEl.textContent = '--';
       progressBar.style.width = '0%';
       progressText.textContent = '0%';
+      resetUSGCard();
     }
 
     // Copy clinical note to clipboard
@@ -752,6 +921,15 @@
       const trimText = trimesterBadge.textContent;
       const concText = conceptionEl.textContent;
 
+      // Ultrasound lines, only when the USG data is complete and valid
+      let usgLines = '';
+      const usgDate = parseDate(usgDateInput.value);
+      const usgW = parseInt(usgWeeksInput.value, 10);
+      const usgD = parseInt(usgDaysInput.value, 10);
+      if (usgDate && !isNaN(usgW) && !isNaN(usgD) && usgEgWeeksEl.textContent !== '--') {
+        usgLines = `\n• Ultrasonido (${formatSpanishDate(usgDate)}, EG ese día: ${usgW} sem ${usgD} d): EG por USG ${usgEgWeeksEl.textContent} sem ${usgEgDaysEl.textContent} d; FPP por USG ${usgFppDateEl.textContent} (${usgFppWeekdayEl.textContent}); ${usgDiffBadge.textContent}.`;
+      }
+
       const clinicalSummary = 
 `--- NOTA OBSTÉTRICA DE EDAD GESTACIONAL ---
 • FUM: ${formatSpanishDate(fum)} (Ciclo: ${cycleLength} días)
@@ -760,7 +938,7 @@
 • FPP (Naegele corregida): ${fppText}
 • Fecha Concepción Estimada: ${concText}
 • Trimestre: ${trimText}
-• Estado: ${termBadge.textContent}
+• Estado: ${termBadge.textContent}${usgLines}
 • Signos de alarma explicados a paciente: Cefalea, acúfenos, fosfenos, sangrado transvaginal, hidrorrea o cambios en dinámica fetal.
 --------------------------------------------`;
 
@@ -834,6 +1012,9 @@
     fumInput.addEventListener('input', recalculate);
     evalInput.addEventListener('input', recalculate);
     cycleInput.addEventListener('input', recalculate);
+    usgDateInput.addEventListener('input', recalculate);
+    usgWeeksInput.addEventListener('input', recalculate);
+    usgDaysInput.addEventListener('input', recalculate);
 
     btnSetToday.addEventListener('click', () => {
       evalInput.value = toISODate(new Date());
