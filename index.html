@@ -205,8 +205,8 @@
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-clinical-500 focus:border-clinical-500 transition-all outline-none">
                 </div>
                 <div>
-                  <label for="usg-days" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Días (ese día)</label>
-                  <input type="number" id="usg-days" min="0" max="6" step="1" placeholder="ej. 3"
+                  <label for="usg-days" class="block text-xs font-medium text-slate-600 dark:text-slate-300 mb-1">Días (ese día, opcional)</label>
+                  <input type="number" id="usg-days" min="0" max="6" step="1" placeholder="0"
                     class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 text-sm font-medium focus:ring-2 focus:ring-clinical-500 focus:border-clinical-500 transition-all outline-none">
                 </div>
               </div>
@@ -709,14 +709,29 @@
     // Ultrasound-based gestational age, extrapolated to the evaluation date
     function updateUSGDisplay(fumTotalDays, evalDate) {
       const usgDate = parseDate(usgDateInput.value);
-      const usgWeeks = parseInt(usgWeeksInput.value, 10);
-      const usgDays = parseInt(usgDaysInput.value, 10);
+      // Empty weeks/days default to 0: the ultrasound often reports whole weeks,
+      // so the days field is optional and must not block the calculation.
+      const usgWeeksRaw = usgWeeksInput.value.trim();
+      const usgDaysRaw = usgDaysInput.value.trim();
+      const usgWeeks = usgWeeksRaw === '' ? 0 : parseInt(usgWeeksRaw, 10);
+      const usgDays = usgDaysRaw === '' ? 0 : parseInt(usgDaysRaw, 10);
 
-      if (!usgDate || isNaN(usgWeeks) || isNaN(usgDays)) {
-        resetUSGCard();
+      if (!usgDate || (usgWeeksRaw === '' && usgDaysRaw === '')) {
+        if (usgDate) {
+          usgDiffBadge.textContent = 'Falta la EG';
+          usgDiffBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300';
+          usgEgWeeksEl.textContent = '--';
+          usgEgDaysEl.textContent = '--';
+          usgEgTotalEl.textContent = 'Falta la edad gestacional que reportó el ultrasonido (semanas).';
+          usgFppDateEl.textContent = '--/--/----';
+          usgFppWeekdayEl.textContent = '--';
+          usgRecommendationEl.textContent = 'Ingrese cuántas semanas tenía el embarazo el día del ultrasonido (los días son opcionales).';
+        } else {
+          resetUSGCard();
+        }
         return;
       }
-      if (usgWeeks < 0 || usgWeeks > 42 || usgDays < 0 || usgDays > 6) {
+      if (isNaN(usgWeeks) || isNaN(usgDays) || usgWeeks < 0 || usgWeeks > 42 || usgDays < 0 || usgDays > 6) {
         usgDiffBadge.textContent = 'Datos inválidos';
         usgDiffBadge.className = 'px-2.5 py-0.5 text-xs font-semibold rounded-full bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 dark:border-rose-700';
         usgEgWeeksEl.textContent = '--';
@@ -922,11 +937,14 @@
       const concText = conceptionEl.textContent;
 
       // Ultrasound lines, only when the USG data is complete and valid
+      // (days are optional and default to 0)
       let usgLines = '';
       const usgDate = parseDate(usgDateInput.value);
-      const usgW = parseInt(usgWeeksInput.value, 10);
-      const usgD = parseInt(usgDaysInput.value, 10);
-      if (usgDate && !isNaN(usgW) && !isNaN(usgD) && usgEgWeeksEl.textContent !== '--') {
+      const usgWRaw = usgWeeksInput.value.trim();
+      const usgDRaw = usgDaysInput.value.trim();
+      const usgW = usgWRaw === '' ? 0 : parseInt(usgWRaw, 10);
+      const usgD = usgDRaw === '' ? 0 : parseInt(usgDRaw, 10);
+      if (usgDate && (usgWRaw !== '' || usgDRaw !== '') && !isNaN(usgW) && !isNaN(usgD) && usgEgWeeksEl.textContent !== '--') {
         usgLines = `\n• Ultrasonido (${formatSpanishDate(usgDate)}, EG ese día: ${usgW} sem ${usgD} d): EG por USG ${usgEgWeeksEl.textContent} sem ${usgEgDaysEl.textContent} d; FPP por USG ${usgFppDateEl.textContent} (${usgFppWeekdayEl.textContent}); ${usgDiffBadge.textContent}.`;
       }
 
