@@ -1027,12 +1027,21 @@
     }
 
     // Event Listeners
-    fumInput.addEventListener('input', recalculate);
-    evalInput.addEventListener('input', recalculate);
-    cycleInput.addEventListener('input', recalculate);
-    usgDateInput.addEventListener('input', recalculate);
-    usgWeeksInput.addEventListener('input', recalculate);
-    usgDaysInput.addEventListener('input', recalculate);
+    // Los campos de fecha se pueden meter tecleando o con el calendario.
+    // Safari no siempre dispara 'input' al teclear una fecha (la confirma
+    // al salir del campo o con Enter), así que se escucha también 'change'
+    // y 'blur': cualquier forma de meter el dato recalcula.
+    const bindRecalc = (el) => {
+      el.addEventListener('input', recalculate);
+      el.addEventListener('change', recalculate);
+      el.addEventListener('blur', recalculate);
+    };
+    bindRecalc(fumInput);
+    bindRecalc(evalInput);
+    bindRecalc(cycleInput);
+    bindRecalc(usgDateInput);
+    bindRecalc(usgWeeksInput);
+    bindRecalc(usgDaysInput);
 
     btnSetToday.addEventListener('click', () => {
       evalInput.value = toISODate(new Date());
